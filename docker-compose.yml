@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  database_host:
+    image: mysql:8.0
+    container_name: live_database
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+            - db_data:/var/lib/mysql
+
+  backup_service:
+    build: ./backup
+    container_name: archive_robot
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    depends_on:
+      - database_host
+    volumes:
+      - ./my-local-backups:/archives
+
+volumes:
+  db_data:
