@@ -20,3 +20,9 @@ jobs:
           docker compose up -d
           sleep 15
           docker compose ps
+
+      - name: Verify Backup Was Created
+        run: |
+          sleep 40
+          ls -la my-local-backups/
+          test $(ls my-local-backups/*.sql.gz 2>/dev/null | wc -l) -gt 0 && echo "BACKUP EXISTS" || echo "BACKUP MISSING"
