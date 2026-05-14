@@ -13,10 +13,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker Infrastructure
-        run: docker-compose build
+        run: docker compose build
 
       - name: Test Container Initialization
         run: |
-          docker-compose up -d
+          docker compose up -d
           sleep 15
-          docker-compose ps
+          docker compose ps
