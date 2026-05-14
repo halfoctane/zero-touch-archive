@@ -9,6 +9,9 @@ services:
       MYSQL_ROOT_PASSWORD: password
     volumes:
             - db_data:/var/lib/mysql
+    networks:
+      - archive_net
+
 
   backup_service:
     build: ./backup
@@ -19,6 +22,22 @@ services:
       - database_host
     volumes:
       - ./my-local-backups:/archives
+    networks:
+      - archive_net
+
+  dashboard:
+    build: ./dashboard
+    container_name: archive_dashboard
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./my-local-backups:/archives
+    networks:
+      - archive_net
+
+networks:
+  archive_net:
+    driver: bridge
 
 volumes:
   db_data:

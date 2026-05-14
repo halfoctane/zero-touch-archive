@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zero-Touch Archive</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a1a; font-size: 14px; }
+
+  header {
+    background: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 { font-size: 16px; font-weight: 600; }
+  header p { font-size: 12px; color: #888; margin-top: 2px; }
+
+  .pill { font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 20px; }
+  .pill.ok { background: #e8f5e9; color: #2e7d32; }
+  .pill.fail { background: #fdecea; color: #c62828; }
+
+  .wrap { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .metric { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 1.2rem; }
+  .metric .label { font-size: 12px; color: #888; margin-bottom: 6px; }
+  .metric .value { font-size: 24px; font-weight: 600; color: #1a1a1a; }
+  .metric .sub { font-size: 11px; color: #aaa; margin-top: 4px; }
+
+  .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; overflow: hidden; }
+  .card-header {
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-header h2 { font-size: 14px; font-weight: 600; }
+  .badge { font-size: 11px; background: #f0f0f0; color: #666; border-radius: 4px; padding: 2px 8px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; padding: 10px 1.25rem;
+    font-size: 11px; font-weight: 500; color: #888;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  tbody tr { border-bottom: 1px solid #f0f0f0; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #fafafa; }
+  tbody td { padding: 12px 1.25rem; }
+
+  .filename { font-family: monospace; font-size: 13px; color: #333; }
+  .time { color: #888; }
+  .size { text-align: right; color: #555; }
+
+  .tag { display: inline-block; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 4px; }
+  .tag.ok { background: #e8f5e9; color: #2e7d32; }
+  .tag.fail { background: #fdecea; color: #c62828; }
+
+  .empty { padding: 3rem; text-align: center; color: #aaa; }
+
+  footer {
+    margin-top: 2rem; padding-bottom: 2rem;
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: #aaa;
+  }
+  footer a { color: #555; text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 600px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Zero-Touch Archive</h1>
+    <p>Automated backup monitoring</p>
+  </div>
+  {% if healthy %}
+  <span class="pill ok">&#10003; All systems operational</span>
+  {% else %}
+  <span class="pill fail">&#9679; Attention required</span>
+  {% endif %}
+</header>
+
+<div class="wrap">
+  <div class="metrics">
+    <div class="metric">
+      <div class="label">Last backup</div>
+      <div class="value">{{ last.time.split(' ')[1][:5] if last else '—' }}</div>
+      <div class="sub">{{ last.time.split(' ')[0] if last else 'No backups yet' }}</div>
+    </div>
+    <div class="metric">
+      <div class="label">Total backups</div>
+      <div class="value">{{ total }}</div>
+      <div class="sub">{{ ok }} successful</div>
+    </div>
+    <div class="metric">
+      <div class="label">Storage used</div>
+      <div class="value">{{ total_size }}</div>
+      <div class="sub">Across all archives</div>
+    </div>
+    <div class="metric">
+      <div class="label">Success rate</div>
+      <div class="value">{{ success_rate }}</div>
+      <div class="sub">{{ ok }}/{{ total }} passed</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Backup history</h2>
+      <span class="badge">{{ total }} files</span>
+    </div>
+    {% if backups %}
+    <table>
+      <thead>
+        <tr>
+          <th>Filename</th>
+          <th>Created</th>
+          <th>Status</th>
+          <th style="text-align:right;">Size</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in backups %}
+        <tr>
+          <td class="filename">{{ b.filename }}</td>
+          <td class="time">{{ b.time }}</td>
+          <td>
+            {% if b.status == 'ok' %}
+            <span class="tag ok">Valid</span>
+            {% else %}
+            <span class="tag fail">Empty</span>
+            {% endif %}
+          </td>
+          <td class="size">{{ b.size_display }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">No backup files found yet. Run the backup service first.</div>
+    {% endif %}
+  </div>
+
+  <footer>
+    <span>Zero-Touch Archive &mdash; DevOps Backup System</span>
+    <span>Auto-refreshes every 60s &mdash; <a href="/">refresh now</a></span>
+  </footer>
+</div>
+
+<script>setTimeout(() => location.reload(), 60000);</script>
+</body>
+</html>
